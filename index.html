@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Groundwork CM — Construction Management Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F2ED; --card:#FFFFFF; --ink:#1B1A17; --ink2:#3C3A34; --muted:#706C62;
+    --border:#E1DDD3; --border-strong:#CFCABE;
+    --accent:#E85D0E; --accent-dark:#B8430A; --accent-soft:#FBEADD;
+    --steel:#2C3944; --ok:#1D7A46; --ok-soft:#E3F1E8; --warn:#9A6A00; --warn-soft:#F7EDD6;
+    --danger:#B3261E; --danger-soft:#F8E5E3; --offline:#8A867C;
+    --side:#211F1A; --side-ink:#EFEDE6; --side-muted:#9B968A;
+    --r:10px; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--paper);color:var(--ink);font:400 14px/1.5 'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+  h1,h2,h3{font-weight:700;letter-spacing:-.01em}
+
+  #app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+  /* ---------- sidebar ---------- */
+  aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
+  .logo{display:flex;align-items:center;gap:10px;padding:0 8px 20px;border-bottom:1px solid #3A372F;margin-bottom:14px}
+  .logo-mark{width:30px;height:30px;flex:none}
+  .logo b{font:800 15px 'Archivo';letter-spacing:.02em}
+  .logo small{display:block;font:500 9px var(--mono);letter-spacing:.14em;color:var(--side-muted);text-transform:uppercase}
+  .nav-label{font:600 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--side-muted);padding:14px 10px 6px}
+  aside nav button{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:8px;color:var(--side-muted);font-weight:600;text-align:left;transition:.15s}
+  aside nav button:hover{color:var(--side-ink);background:#2B2922}
+  aside nav button.active{color:#fff;background:var(--accent)}
+  aside nav button .icn{width:16px;text-align:center;font-family:var(--mono);font-size:11px;opacity:.8}
+  .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid #3A372F}
+  .reset{width:100%;padding:8px;border:1px solid #3A372F;border-radius:8px;color:var(--side-muted);font:600 11px var(--mono);letter-spacing:.08em}
+  .reset:hover{color:var(--side-ink);border-color:#57534a}
+
+  /* ---------- topbar ---------- */
+  main{display:flex;flex-direction:column;min-width:0}
+  .topbar{display:flex;align-items:center;gap:16px;padding:14px 26px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+  .crumb{font:700 17px 'Archivo'}
+  .crumb span{color:var(--muted);font-weight:500}
+  .role-switch{margin-left:auto;display:flex;background:var(--paper);border:1px solid var(--border);border-radius:9px;padding:3px}
+  .role-switch button{padding:6px 14px;border-radius:6px;font-weight:700;font-size:12px;color:var(--muted);letter-spacing:.02em}
+  .role-switch button.active{background:var(--steel);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .persona{display:flex;align-items:center;gap:9px;padding-left:16px;border-left:1px solid var(--border)}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--steel);color:#fff;display:grid;place-items:center;font:700 11px 'Archivo'}
+  .avatar.o{background:var(--accent)}
+  .avatar.c{background:#6D5B3E}
+  .persona b{display:block;font-size:12.5px;line-height:1.2}
+  .persona small{color:var(--muted);font-size:11px}
+  .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:5px;animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(29,122,70,.5)}70%{box-shadow:0 0 0 6px rgba(29,122,70,0)}100%{box-shadow:0 0 0 0 rgba(29,122,70,0)}}
+  @media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
+
+  #view{padding:26px;max-width:1180px;width:100%}
+
+  /* ---------- generic ---------- */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-weight:700;font-size:13px;transition:.15s}
+  .btn.pri{background:var(--accent);color:#fff}
+  .btn.pri:hover{background:var(--accent-dark)}
+  .btn.sec{background:var(--card);border:1px solid var(--border-strong);color:var(--ink2)}
+  .btn.sec:hover{border-color:var(--ink2)}
+  .btn.sm{padding:6px 12px;font-size:12px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 1px 2px rgba(27,26,23,.04)}
+  .card-pad{padding:20px}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .kpi{padding:16px 18px}
+  .kpi .k{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font:800 30px 'Archivo';margin-top:2px}
+  .kpi .d{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin:26px 0 12px}
+  .sec-head h2{font-size:16px}
+  .sec-head .hint{color:var(--muted);font-size:12px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font:700 11px 'Archivo';letter-spacing:.02em}
+  .pill.phase{background:#EDEFF1;color:#3A4A58}
+  .pill.ok{background:var(--ok-soft);color:var(--ok)}
+  .pill.warn{background:var(--warn-soft);color:var(--warn)}
+  .pill.danger{background:var(--danger-soft);color:var(--danger)}
+  .pill.off{background:#EFEDE7;color:var(--offline)}
+  .pill.accent{background:var(--accent-soft);color:var(--accent-dark)}
+  .bar{height:6px;background:#EDEAE1;border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+  .mono{font-family:var(--mono)}
+  .muted{color:var(--muted)}
+  table{width:100%;border-collapse:collapse}
+  th{font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}
+  td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr{transition:.12s}
+  tbody tr.clickable:hover{background:#FAF8F3;cursor:pointer}
+  .toast-wrap{position:fixed;bottom:22px;left:236px;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:99;pointer-events:none}
+  .toast{background:var(--steel);color:#fff;padding:11px 18px;border-radius:9px;font-weight:600;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.22);animation:tin .25s ease-out}
+  @keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+
+  /* ---------- projects ---------- */
+  .proj-grid{grid-template-columns:repeat(3,1fr)}
+  .proj-card{padding:18px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:.15s}
+  .proj-card:hover{border-color:var(--accent);box-shadow:0 4px 16px rgba(232,93,14,.09);transform:translateY(-1px)}
+  .proj-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .proj-card h3{font-size:15px}
+  .proj-card .addr{font-size:12px;color:var(--muted)}
+  .stat-row{display:flex;gap:16px;font-size:11.5px;color:var(--muted)}
+  .stat-row b{color:var(--ink);font-family:var(--mono);font-weight:600}
+  .team{display:flex}
+  .team .avatar{width:24px;height:24px;font-size:9px;border:2px solid #fff;margin-left:-7px}
+  .team .avatar:first-child{margin-left:0}
+  .due{font:500 11px var(--mono);color:var(--muted)}
+
+  /* ---------- detail ---------- */
+  .dhead{display:flex;gap:24px;align-items:center}
+  .ring{width:118px;height:118px;border-radius:50%;display:grid;place-items:center;flex:none}
+  .ring .inner{width:86px;height:86px;border-radius:50%;background:var(--card);display:grid;place-items:center;text-align:center}
+  .ring b{font:800 24px 'Archivo';display:block}
+  .ring small{font:600 9px var(--mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+  .stepper{display:flex;margin:22px 0 6px}
+  .step{flex:1;position:relative;padding-top:22px;font:600 11px 'Archivo';color:var(--muted)}
+  .step::before{content:'';position:absolute;top:6px;left:0;right:0;height:3px;background:#E7E3D9}
+  .step::after{content:'';position:absolute;top:0;left:0;width:15px;height:15px;border-radius:50%;background:#E7E3D9;border:2px solid var(--card);box-shadow:0 0 0 1px var(--border-strong)}
+  .step.done{color:var(--ink2)}
+  .step.done::before{background:var(--ok)}
+  .step.done::after{background:var(--ok)}
+  .step.now{color:var(--accent-dark);font-weight:800}
+  .step.now::before{background:linear-gradient(90deg,var(--ok),var(--accent))}
+  .step.now::after{background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .split{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+  .feed-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed var(--border)}
+  .feed-item:last-child{border-bottom:none}
+  .feed-item .fa{width:26px;height:26px;border-radius:50%;font-size:9px;font-weight:700;display:grid;place-items:center;color:#fff;background:var(--steel);flex:none;margin-top:2px}
+  .feed-item .ft{font-size:12.5px}
+  .feed-item .fm{font:500 10.5px var(--mono);color:var(--muted)}
+
+  /* ---------- forms / modals ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(27,26,23,.5);display:grid;place-items:center;z-index:50;padding:24px}
+  .modal{background:var(--card);border-radius:14px;width:560px;max-width:100%;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.28)}
+  .modal-h{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center}
+  .modal-h h3{font-size:16px}
+  .modal-h .x{margin-left:auto;color:var(--muted);font-size:18px;padding:4px}
+  .modal-b{padding:22px}
+  .modal-f{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font:700 12px 'Archivo';margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:8px;background:#FCFBF8}
+  .field input[type=checkbox],.field input[type=radio]{width:auto;padding:0}
+  .check-row span{flex:1;min-width:0}
+  .check-row small{flex:none}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .role-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .role-card{border:1.5px solid var(--border-strong);border-radius:10px;padding:14px 12px;text-align:left;cursor:pointer;transition:.15s}
+  .role-card b{display:block;font-size:13px;margin-bottom:4px}
+  .role-card span{font-size:11px;color:var(--muted);line-height:1.4;display:block}
+  .role-card.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .check-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
+  .check-row small{color:var(--muted);margin-left:auto;font-family:var(--mono);font-size:10.5px}
+  .steps-ind{display:flex;gap:6px;margin-left:12px}
+  .steps-ind i{width:22px;height:4px;border-radius:99px;background:#E7E3D9}
+  .steps-ind i.on{background:var(--accent)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .range-val{font:700 26px var(--mono);color:var(--accent-dark)}
+
+  /* ---------- inventory ---------- */
+  .stepctl{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden}
+  .stepctl button{width:32px;height:32px;font:700 16px var(--mono);color:var(--ink2)}
+  .stepctl button:hover{background:var(--accent-soft);color:var(--accent-dark)}
+  .stepctl .q{min-width:56px;text-align:center;font:600 14px var(--mono)}
+  tr.low td{background:var(--warn-soft)}
+  .use{width:120px}
+
+  /* ---------- equipment ---------- */
+  .eq-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px}
+  .eq-dot.in-use{background:var(--ok);animation:pulse 1.6s infinite}
+  .eq-dot.idle{background:var(--warn)}
+  .eq-dot.offline{background:var(--offline)}
+  .eq-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .eq-card{padding:16px;display:flex;gap:14px;align-items:center}
+  .eq-icon{width:46px;height:46px;border-radius:10px;background:#EDEFF1;display:grid;place-items:center;font:700 11px var(--mono);color:#3A4A58;flex:none}
+  .eq-card h4{font-size:14px}
+  .eq-meta{font-size:11.5px;color:var(--muted)}
+  .eq-ping{font:500 10.5px var(--mono);color:var(--muted);margin-left:auto;text-align:right}
+
+  /* ---------- benchmark ---------- */
+  .bench-bars .brow{display:grid;grid-template-columns:170px 1fr 70px;align-items:center;gap:14px;margin-bottom:10px}
+  .bench-bars .bl{font-size:12.5px;font-weight:600}
+  .bench-bars .btrack{height:14px;background:#EDEAE1;border-radius:5px;overflow:hidden}
+  .bench-bars .bfill{height:100%;border-radius:5px}
+  .bench-bars .bv{font:600 12px var(--mono);text-align:right}
+  .current-tag{font:700 9px var(--mono);letter-spacing:.1em;background:var(--accent-soft);color:var(--accent-dark);padding:2px 7px;border-radius:4px;margin-left:8px;text-transform:uppercase}
+
+  /* ---------- client ---------- */
+  .client-hero{display:flex;gap:28px;align-items:center;padding:28px}
+  .phase-tl{display:flex;margin-top:8px}
+  .pnode{flex:1;text-align:center;font:600 10.5px 'Archivo';color:var(--muted);position:relative;padding-top:20px}
+  .pnode::before{content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);width:11px;height:11px;border-radius:50%;background:#D8D4C9}
+  .pnode.done{color:var(--ink2)}.pnode.done::before{background:var(--ok)}
+  .pnode.now{color:var(--accent-dark);font-weight:800}.pnode.now::before{background:var(--accent);box-shadow:0 0 0 5px var(--accent-soft)}
+  .pnode::after{content:'';position:absolute;top:9px;left:-50%;width:100%;height:2px;background:#E7E3D9;z-index:-1}
+  .pnode:first-child::after{display:none}
+  .pnode.done::after{background:var(--ok)}
+
+  .empty{padding:34px;text-align:center;color:var(--muted);font-size:13px}
+  @media(max-width:1000px){.proj-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.split{grid-template-columns:1fr}.eq-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <div class="logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" fill="none"><rect x="2" y="2" width="28" height="28" rx="6" fill="#E85D0E"/><path d="M9 22 L16 9 L23 22" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="18" x2="20" y2="18" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg>
+      <div><b>GROUNDWORK</b><small>Construction Mgmt</small></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="side-foot">
+      <button class="reset" onclick="resetDemo()">⟲ &nbsp;RESET DEMO DATA</button>
+    </div>
+  </aside>
+  <main>
+    <div class="topbar">
+      <div class="crumb" id="crumb">Overview</div>
+      <div class="role-switch" id="roles">
+        <button data-role="admin" onclick="setRole('admin')">Admin</button>
+        <button data-role="worker" onclick="setRole('worker')">Worker</button>
+        <button data-role="client" onclick="setRole('client')">Client</button>
+      </div>
+      <div class="persona" id="persona"></div>
+    </div>
+    <div id="view"></div>
+  </main>
+</div>
+<div id="modal-root"></div>
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+/* ============================================================
+   GROUNDWORK CM — clickable prototype
+   Demo state persists to localStorage. Reset via sidebar.
+   ============================================================ */
+const PHASES = ['Mobilization','Sitework & Foundation','Framing','MEP Rough-In','Interiors & Finishes','Punch List & Handover'];
+const H = 36e5, D = 24*H, now = Date.now();
+
+function seed(){
+  return {
+    role:'admin',
+    route:{screen:'overview'},
+    seq:100,
+    users:[
+      {id:'u1',name:'Dana Kim',email:'dana.kim@groundwork.co',role:'admin',projects:['p1','p2','p3']},
+      {id:'u2',name:'Marcus Ortiz',email:'m.ortiz@groundwork.co',role:'worker',projects:['p1','p3']},
+      {id:'u3',name:'Priya Nair',email:'p.nair@groundwork.co',role:'worker',projects:['p1','p2']},
+      {id:'u4',name:'Tomas Reed',email:'t.reed@groundwork.co',role:'worker',projects:['p2']},
+      {id:'u5',name:'Sam Whitfield',email:'sam@auroradev.com',role:'client',projects:['p1']},
+    ],
+    projects:[
+      {id:'p1',name:'The Palms Residences',type:'Multi-family residential',address:'1410 Seabreeze Ave',sqft:84000,budget:18200000,spent:8560000,start:'2026-03-02',due:'2027-08-14',phaseIdx:2,progress:47,
+        rooms:{units:62,beds:118,baths:94,common:9},materials:['Post-tensioned concrete','Rebar steel','Curtain-wall glazing','Drywall'],
+        team:['u1','u2','u3']},
+      {id:'p2',name:'Harborview Office Fit-Out',type:'Commercial TI',address:'88 Pier St, Floor 6–7',sqft:22500,budget:4100000,spent:2990000,start:'2026-06-15',due:'2027-02-27',phaseIdx:3,progress:71,
+        rooms:{units:2,beds:0,baths:6,common:14},materials:['Steel studs','Drywall','Raised flooring','Glazed partitions'],
+        team:['u1','u3','u4']},
+      {id:'p3',name:'Ridge Road Duplexes',type:'Residential (2× duplex)',address:'3700 Ridge Rd',sqft:9800,budget:2350000,spent:410000,start:'2026-10-05',due:'2027-11-30',phaseIdx:1,progress:18,
+        rooms:{units:4,beds:12,baths:10,common:0},materials:['Poured concrete','Douglas fir lumber','Fiber-cement siding'],
+        team:['u1','u2']},
+    ],
+    past:[
+      {name:'Harbor Lofts',completed:'Q3 2024',sqft:76000,rooms:{units:54,beds:96,baths:78,common:7},materials:['Post-tensioned concrete','Rebar steel','Brick veneer'],duration:74,cost:211,co:9,
+        use:{concrete:5120,steel:412,lumber:0,drywall:3050}},
+      {name:'1220 Grand Ave',completed:'Q1 2023',sqft:68000,rooms:{units:48,beds:84,baths:66,common:5},materials:['Structural steel','Curtain-wall glazing','Drywall'],duration:81,cost:236,co:14,
+        use:{concrete:3950,steel:520,lumber:0,drywall:2710}},
+      {name:'Cedar Court',completed:'Q4 2025',sqft:91000,rooms:{units:70,beds:128,baths:104,common:11},materials:['Mass timber','Glulam beams','Drywall'],duration:69,cost:198,co:6,
+        use:{concrete:2400,steel:96,lumber:1810,drywall:3420}},
+    ],
+    inventory:[
+      {id:'i1',projectId:'p1',item:'Ready-mix concrete',unit:'yd³',onHand:120,required:340,par:100},
+      {id:'i2',projectId:'p1',item:'#5 Rebar',unit:'tons',onHand:9,required:22,par:8},
+      {id:'i3',projectId:'p1',item:'Glazing panels',unit:'units',onHand:48,required:120,par:30},
+      {id:'i4',projectId:'p1',item:'Drywall sheets (12ft)',unit:'sheets',onHand:210,required:900,par:250},
+      {id:'i5',projectId:'p2',item:'Steel studs (25 ga)',unit:'pcs',onHand:1400,required:1800,par:600},
+      {id:'i6',projectId:'p2',item:'Raised floor tiles',unit:'pcs',onHand:320,required:760,par:200},
+      {id:'i7',projectId:'p3',item:'Lumber — Doug fir 2×6',unit:'bd ft',onHand:2600,required:9000,par:3000},
+      {id:'i8',projectId:'p3',item:'Concrete (footings)',unit:'yd³',onHand:64,required:96,par:40},
+    ],
+    equipment:[
+      {id:'e1',code:'TC-01',name:'Tower Crane',type:'Crane',status:'in-use',projectId:'p1',operator:'J. Alvarez',ping:now-12e3},
+      {id:'e2',code:'EX-2',name:'CAT 336 Excavator',type:'Earthwork',status:'in-use',projectId:'p3',operator:'R. Boone',ping:now-41e3},
+      {id:'e3',code:'SL-5',name:'Scissor Lift (32ft)',type:'Aerial',status:'idle',projectId:'p2',operator:'—',ping:now-3*6e4},
+      {id:'e4',code:'CP-1',name:'Concrete Pump',type:'Concrete',status:'in-use',projectId:'p1',operator:'M. Ortiz',ping:now-7e3},
+      {id:'e5',code:'TH-3',name:'Telehandler 10k',type:'Material',status:'idle',projectId:'p1',operator:'—',ping:now-9*6e4},
+      {id:'e6',code:'GEN-2',name:'Generator 150 kVA',type:'Power',status:'in-use',projectId:'p2',operator:'P. Nair',ping:now-22e3},
+      {id:'e7',code:'SK-4',name:'Skid Steer',type:'Earthwork',status:'offline',projectId:'p3',operator:'—',ping:now-2*H},
+      {id:'e8',code:'BL-2',name:'Boom Lift (60ft)',type:'Aerial',status:'in-use',projectId:'p1',operator:'T. Reed',ping:now-15e3},
+    ],
+    feed:[
+      {projectId:'p1',t:now-2*H,by:'Marcus Ortiz',kind:'status',text:'Framing reached Level 4 — 47% of structural frame complete.'},
+      {projectId:'p1',t:now-5*H,by:'Priya Nair',kind:'delivery',text:'Delivery logged: 60 yd³ ready-mix concrete (Batch #2214).'},
+      {projectId:'p1',t:now-D-2*H,by:'Dana Kim',kind:'note',text:'Schedule updated: glazing mobilization pulled forward 1 week.'},
+      {projectId:'p2',t:now-3*H,by:'Tomas Reed',kind:'status',text:'MEP rough-in 71% — floor 7 ductwork complete, floor 6 plumbing in progress.'},
+      {projectId:'p3',t:now-D,by:'Marcus Ortiz',kind:'status',text:'Footings poured on Unit B. Curing through the weekend.'},
+    ],
+  };
+}
+
+let state;
+try{ state = JSON.parse(localStorage.getItem('gw-state')) || seed(); }catch(e){ state = seed(); }
+function save(){ localStorage.setItem('gw-state', JSON.stringify(state)); }
+function resetDemo(){ localStorage.removeItem('gw-state'); state = seed(); render(); toast('Demo data reset'); }
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt$ = n => '$' + Math.round(n).toLocaleString();
+const rel = t => { const s = Math.max(1,Math.round((Date.now()-t)/1e3));
+  if(s<60) return s+'s ago'; const m=Math.round(s/60); if(m<60) return m+'m ago';
+  const h=Math.round(m/60); if(h<24) return h+'h ago'; return Math.round(h/24)+'d ago'; };
+const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+const user = id => state.users.find(u=>u.id===id);
+const proj = id => state.projects.find(p=>p.id===id);
+const ME = { admin:()=>state.users.find(u=>u.role==='admin'), worker:()=>state.users.find(u=>u.id==='u2'), client:()=>state.users.find(u=>u.role==='client') };
+const ROLE_META = {
+  admin:{title:'Operations Director',view:'All projects'},
+  worker:{title:'Site Foreman',view:'Assigned sites'},
+  client:{title:'Aurora Development',view:'Your build'},
+};
+const NAV = {
+  admin:[['overview','Overview'],['projects','Projects'],['workforce','Workforce & Roles'],['bench','Benchmarking'],['inv','Inventory'],['equip','Equipment']],
+  worker:[['site','My Site'],['inv','Inventory'],['equip','Equipment']],
+  client:[['live','Live Status']],
+};
+const DEFAULT_ROUTE = { admin:{screen:'overview'}, worker:{screen:'site'}, client:{screen:'live'} };
+const avHtml = (u,cls='') => u?`<span class="avatar ${cls}" title="${esc(u.name)}">${initials(u.name)}</span>`:'';
+const avCls = r => r==='admin'?'':r==='client'?'c':'o';
+
+function toast(msg){
+  const t = document.createElement('div'); t.className='toast'; t.textContent = msg;
+  $('#toasts').appendChild(t); setTimeout(()=>{t.style.opacity='0';t.style.transition='.3s';setTimeout(()=>t.remove(),320)},2600);
+}
+
+/* ---------- role / routing ---------- */
+function setRole(r){ state.role = r; state.route = {...DEFAULT_ROUTE[r]}; save(); render(); }
+function nav(screen, projectId){ state.route = {screen, projectId}; save(); render(); window.scrollTo(0,0); }
+window.setRole = setRole; window.nav = nav; window.resetDemo = resetDemo;
+
+function render(){
+  // nav
+  $('#nav').innerHTML = NAV[state.role].map(([id,label]) =>
+    `<button class="${active(id)?'active':''}" onclick="nav('${id}')"><span class="icn">${{'overview':'▤','projects':'▦','workforce':'⚑','bench':'≋','equip':'⚙','site':'▶','inv':'▧','live':'●'}[id]||'·'}</span>${label}</button>`).join('');
+  // role switch + persona
+  document.querySelectorAll('#roles button').forEach(b => b.classList.toggle('active', b.dataset.role===state.role));
+  const me = ME[state.role]();
+  $('#persona').innerHTML = `
+    ${avHtml(me, avCls(state.role))}
+    <div><b>${esc(me.name)}</b><small>${ROLE_META[state.role].title} · ${ROLE_META[state.role].view}</small></div>`;
+  // view
+  const r = state.route, v = $('#view');
+  const renderers = { overview, projects, projectDetail, workforce, bench, equip, site, inv, live };
+  v.innerHTML = renderers[r.screen] ? renderers[r.screen]() : overview();
+  tick(); // refresh relative-time labels immediately
+}
+function active(id){
+  const r = state.route;
+  if(r.screen===id) return true;
+  if(id==='projects' && r.screen==='projectDetail') return true;
+  return false;
+}
+
+/* ---------- crumbs ---------- */
+const crumb = h => { $('#crumb').innerHTML = h; };
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+
+/* ---- ADMIN: Overview (Monitor) ---- */
+function overview(){
+  crumb('Overview <span>/ all projects</span>');
+  const crew = state.users.filter(u=>u.role==='worker').length + 9;
+  const eqUse = state.equipment.filter(e=>e.status==='in-use').length;
+  const lowStock = state.inventory.filter(i=>i.onHand<=i.par).length;
+  return `
+  <div class="grid kpis">
+    <div class="card kpi"><div class="k">Active Projects</div><div class="v">${state.projects.length}</div><div class="d">${state.projects.filter(p=>p.progress<100).length} in construction</div></div>
+    <div class="card kpi"><div class="k">Crew On Site</div><div class="v">${crew}</div><div class="d">across ${state.projects.length} sites today</div></div>
+    <div class="card kpi"><div class="k">Equipment In Use</div><div class="v">${eqUse} <span class="muted" style="font-size:15px">/ ${state.equipment.length}</span></div><div class="d"><span class="live-dot"></span>live telemetry</div></div>
+    <div class="card kpi"><div class="k">Low-Stock Alerts</div><div class="v" style="color:${lowStock?'var(--warn)':'var(--ink)'}">${lowStock}</div><div class="d">materials at/below par</div></div>
+  </div>
+  <div class="sec-head"><h2>Projects</h2><span class="hint">Select a project to open its detail</span>
+    <button class="btn pri sm" style="margin-left:auto" onclick="openNewProject()">+ New Project</button></div>
+  <div class="grid proj-grid">
+    ${state.projects.map(projectCard).join('')}
+  </div>`;
+}
+
+function projectCard(p){
+  return `
+  <div class="card proj-card" onclick="nav('projectDetail','${p.id}')">
+    <div class="top"><div><h3>${esc(p.name)}</h3><div class="addr">${esc(p.type)} · ${esc(p.address)}</div></div>
+      <span class="pill phase">${PHASES[p.phaseIdx].split(' ')[0]}</span></div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font:600 11px var(--mono);color:var(--muted);margin-bottom:6px">
+        <span>${PHASES[p.phaseIdx]}</span><span>${p.progress}%</span></div>
+      <div class="bar"><i style="width:${p.progress}%"></i></div>
+    </div>
+    <div class="stat-row">
+      <span><b>${(p.sqft/1000).toFixed(0)}k</b> sq ft</span>
+      <span><b>${esc(p.rooms.units)}</b> units</span>
+      <span><b>${Math.max(0,Math.ceil((new Date(p.due)-Date.now())/86400000))}</b> days left</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="team">${p.team.map(id=>avHtml(user(id), avCls(user(id).role))).join('')}</div>
+      <div class="due">due ${p.due}</div>
+    </div>
+  </div>`;
+}
+
+/* ---- ADMIN: Projects list ---- */
+function projects(){
+  crumb('Projects <span>/ portfolio</span>');
+  return `
+  <div class="sec-head" style="margin-top:0"><h2>Portfolio</h2><span class="hint">${state.projects.length} active</span>
+    <button class="btn pri sm" style="margin-left:auto" onclick="openNewProject()">+ New Project</button></div>
+  <div class="card">
+    <table><thead><tr><th>Project</th><th>Phase</th><th>Progress</th><th>Budget Used</th><th>Team</th><th style="text-align:right">Due</th></tr></thead>
+    <tbody>
+    ${state.projects.map(p=>`
+      <tr class="clickable" onclick="nav('projectDetail','${p.id}')">
+        <td><b>${esc(p.name)}</b><div class="muted" style="font-size:11.5px">${esc(p.type)} · ${(p.sqft).toLocaleString()} sq ft</div></td>
+        <td><span class="pill phase">${PHASES[p.phaseIdx]}</span></td>
+        <td style="min-width:140px"><div style="display:flex;align-items:center;gap:10px"><div class="bar" style="flex:1"><i style="width:${p.progress}%"></i></div><span class="mono" style="font-size:11.5px;font-weight:600">${p.progress}%</span></div></td>
+        <td class="mono" style="font-size:12px">${fmt$(p.spent)} <span class="muted">/ ${fmt$(p.budget)}</span></td>
+        <td><div class="team">${p.team.map(id=>avHtml(user(id), avCls(user(id).role))).join('')}</div></td>
+        <td class="mono" style="text-align:right;font-size:12px">${p.due}</td>
+      </tr>`).join('')}
+    </tbody></table>
+  </div>`;
+}
+
+/* ---- ADMIN: Project detail ---- */
+function projectDetail(){
+  const p = proj(state.route.projectId) || state.projects[0];
+  crumb(`Projects <span>/ ${esc(p.name)}</span>`);
+  const inv = state.inventory.filter(i=>i.projectId===p.id);
+  const eq = state.equipment.filter(e=>e.projectId===p.id);
+  const feed = state.feed.filter(f=>f.projectId===p.id).sort((a,b)=>b.t-a.t);
+  return `
+  <button class="btn sec sm" onclick="nav(state.role==='admin'?'projects':'site')" style="margin-bottom:16px">← Back</button>
+  <div class="card card-pad">
+    <div class="dhead">
+      ${ring(p.progress)}
+      <div style="flex:1">
+        <h2 style="font-size:20px">${esc(p.name)}</h2>
+        <div class="muted" style="font-size:12.5px">${esc(p.type)} · ${esc(p.address)} · ${p.sqft.toLocaleString()} sq ft</div>
+        <div style="display:flex;gap:16px;margin-top:10px;font-size:12px">
+          <span><span class="muted">Budget</span> <b class="mono">${fmt$(p.spent)} / ${fmt$(p.budget)}</b></span>
+          <span><span class="muted">Rooms</span> <b class="mono">${p.rooms.units} units · ${p.rooms.beds} bd · ${p.rooms.baths} ba · ${p.rooms.common} common</b></span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="team" style="justify-content:flex-end;margin-bottom:8px">${p.team.map(id=>avHtml(user(id), avCls(user(id).role))).join('')}</div>
+        <div class="due">start ${p.start} · due ${p.due}</div>
+      </div>
+    </div>
+    <div class="stepper">
+      ${PHASES.map((ph,i)=>`<div class="step ${i<p.phaseIdx?'done':i===p.phaseIdx?'now':''}">${ph}</div>`).join('')}
+    </div>
+  </div>
+  <div class="split" style="margin-top:16px">
+    <div class="card card-pad">
+      <h3 style="font-size:14px;margin-bottom:4px">Activity feed</h3>
+      ${feed.length ? feed.map(f=>`
+        <div class="feed-item"><span class="fa">${initials(f.by)}</span>
+          <div><div class="ft">${esc(f.text)}</div>
+          <div class="fm">${esc(f.by)} · ${f.kind.toUpperCase()} · <span data-rel="${f.t}">${rel(f.t)}</span></div></div></div>`).join('')
+        : `<div class="empty">No updates yet.</div>`}
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card card-pad">
+        <h3 style="font-size:14px;margin-bottom:10px">Inventory snapshot</h3>
+        ${inv.map(i=>`
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--border)">
+            <span>${esc(i.item)}</span>
+            <span class="mono" style="color:${i.onHand<=i.par?'var(--warn)':'var(--ink)'};font-weight:600">${i.onHand} <span class="muted">/ ${i.required} ${i.unit}</span></span>
+          </div>`).join('') || '<div class="empty">No materials tracked.</div>'}
+      </div>
+      <div class="card card-pad">
+        <h3 style="font-size:14px;margin-bottom:10px">Equipment on site <span class="pill ok" style="margin-left:6px"><span class="live-dot"></span>LIVE</span></h3>
+        ${eq.map(e=>`
+          <div style="display:flex;align-items:center;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--border)">
+            <span><span class="eq-dot ${e.status}"></span><b>${e.code}</b> · ${esc(e.name)}</span>
+            <span class="mono muted" data-rel="${e.ping}" style="margin-left:auto;font-size:10.5px">${rel(e.ping)}</span>
+          </div>`).join('') || '<div class="empty">No equipment assigned.</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+function ring(pct){
+  return `<div class="ring" style="background:conic-gradient(var(--accent) ${pct*3.6}deg, #EAE6DD 0)">
+    <div class="inner"><div><b>${pct}%</b><small>complete</small></div></div></div>`;
+}
+
+/* ---- ADMIN: Workforce & roles ---- */
+function workforce(){
+  crumb('Workforce <span>/ roles &amp; project assignment</span>');
+  return `
+  <div class="sec-head" style="margin-top:0"><h2>Team directory</h2><span class="hint">${state.users.length} users · 3 role types</span>
+    <button class="btn pri sm" style="margin-left:auto" onclick="openOnboard()">+ Onboard User</button></div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
+    <div class="card card-pad"><b>Admin</b><div class="muted" style="font-size:12px;margin-top:4px">Creates projects, manages team, sees everything.</div></div>
+    <div class="card card-pad"><b>Worker</b><div class="muted" style="font-size:12px;margin-top:4px">Posts status updates and keeps site inventory current.</div></div>
+    <div class="card card-pad"><b>Client</b><div class="muted" style="font-size:12px;margin-top:4px">Follows their project live — statuses and equipment only.</div></div>
+  </div>
+  <div class="card">
+    <table><thead><tr><th>User</th><th>Role</th><th>Assigned Projects</th><th style="text-align:right">Actions</th></tr></thead>
+    <tbody>
+    ${state.users.map(u=>`
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:10px">${avHtml(u,avCls(u.role))}<div><b>${esc(u.name)}</b><div class="muted" style="font-size:11.5px">${esc(u.email)}</div></div></div></td>
+        <td>
+          <select onchange="changeRole('${u.id}',this.value)" style="padding:7px 10px;border:1px solid var(--border-strong);border-radius:7px;font-weight:600;background:${u.role==='admin'?'#EDEFF1':u.role==='worker'?'var(--accent-soft)':'#F2EDE2'}">
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+            <option value="worker" ${u.role==='worker'?'selected':''}>Worker</option>
+            <option value="client" ${u.role==='client'?'selected':''}>Client</option>
+          </select>
+        </td>
+        <td><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          ${u.projects.map(pid=>`<span class="pill phase">${esc(proj(pid)?proj(pid).name:'?')} <button onclick="unassign('${u.id}','${pid}')" title="Remove" style="font-weight:800;margin-left:2px">×</button></span>`).join('')}
+          <select onchange="if(this.value){assign('${u.id}',this.value);this.value=''}" style="padding:5px 8px;border:1px dashed var(--border-strong);border-radius:99px;font-size:11px;color:var(--muted)">
+            <option value="">+ assign…</option>
+            ${state.projects.filter(p=>!u.projects.includes(p.id)).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+          </select></div></td>
+        <td style="text-align:right"><button class="btn sec sm" onclick="openOnboard('${u.id}')">Edit</button></td>
+      </tr>`).join('')}
+    </tbody></table>
+  </div>`;
+}
+function changeRole(uid,r){ const u=user(uid); u.role=r; save(); render(); toast(`${u.name} is now a ${r}`); }
+function assign(uid,pid){ const u=user(uid); if(!u.projects.includes(pid)) u.projects.push(pid); save(); render(); toast(`${u.name} assigned to ${proj(pid).name}`); }
+function unassign(uid,pid){ const u=user(uid); u.projects=u.projects.filter(p=>p!==pid); save(); render(); }
+window.changeRole=changeRole; window.assign=assign; window.unassign=unassign;
+
+/* ---- ADMIN: Benchmarking (Compare) ---- */
+function bench(){
+  crumb('Benchmarking <span>/ current vs. completed builds</span>');
+  const cur = proj(state.route.projectId) || state.projects[0];
+  const cols = [...state.past, currentAsBench(cur)];
+  const mats = [
+    {key:'concrete',label:'Concrete (yd³)'},
+    {key:'steel',label:'Steel (tons)'},
+    {key:'lumber',label:'Lumber (bd ft)'},
+    {key:'drywall',label:'Drywall (sheets)'},
+  ];
+  return `
+  <div class="sec-head" style="margin-top:0"><h2>Estimate vs. history</h2><span class="hint">Compare the active project against completed builds of similar scope</span></div>
+  <div class="card card-pad" style="margin-bottom:16px;display:flex;gap:14px;align-items:center">
+    <b style="font-size:13px">Active project:</b>
+    <select onchange="nav('bench',this.value)" style="padding:9px 12px;border:1px solid var(--border-strong);border-radius:8px;font-weight:600">
+      ${state.projects.map(p=>`<option value="${p.id}" ${p.id===cur.id?'selected':''}>${esc(p.name)}</option>`).join('')}
+    </select>
+    <span class="muted" style="font-size:12px">Material intensity is per 1,000 sq ft — comparable across project sizes.</span>
+  </div>
+  <div class="card" style="margin-bottom:16px;overflow:auto">
+    <table><thead><tr><th></th>${cols.map(c=>`<th style="text-align:right">${esc(c.name)}${c.current?'<span class="current-tag">Current</span>':''}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${[
+        ['Completed', c=>c.current?`due ${proj(cur.id).due}`:c.completed],
+        ['Size', c=>c.sqft.toLocaleString()+' sq ft'],
+        ['Rooms / Units', c=>`${c.rooms.units} units · ${c.rooms.beds} bd / ${c.rooms.baths} ba · ${c.rooms.common} common`],
+        ['Primary Materials', c=>c.materials.join(', ')],
+        ['Duration', c=>c.duration?c.duration+' wks':'in progress'],
+        ['Cost / sq ft', c=>c.cost?'$'+c.cost:'$'+Math.round(c.spent/c.sqft)+' (to date)'],
+        ['Change Orders', c=>c.co!=null?c.co:'4 (open)'],
+      ].map(([label,fn])=>`<tr><td style="color:var(--muted);font-weight:600;font-size:12px">${label}</td>${cols.map(c=>`<td style="text-align:right;font-size:12.5px;${c.current?'font-weight:700':''}">${fn(c)}</td>`).join('')}</tr>`).join('')}
+    </tbody></table>
+  </div>
+  <div class="card card-pad">
+    <h3 style="font-size:14px;margin-bottom:16px">Material intensity <span class="muted" style="font-weight:400;font-size:12px">— usage per 1,000 sq ft</span></h3>
+    ${mats.map(m=>{
+      const data = cols.map(c=>({name:c.name,current:c.current,v:c.use[m.key]||0}));
+      const max = Math.max(...data.map(d=>d.v),1);
+      return `<div class="bench-bars" style="margin-bottom:18px">
+        <div style="font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">${m.label}</div>
+        ${data.map(d=>`<div class="brow"><span class="bl">${esc(d.name)}${d.current?'<span class="current-tag">Current</span>':''}</span>
+          <div class="btrack"><div class="bfill" style="width:${Math.max(d.v/max*100, d.v?3:0)}%;background:${d.current?'var(--accent)':'#9BB0BE'}"></div></div>
+          <span class="bv">${d.v||'—'}</span></div>`).join('')}
+      </div>`;
+    }).join('')}
+    <div class="muted" style="font-size:12px;border-top:1px dashed var(--border);padding-top:12px">
+      <b style="color:var(--accent-dark)">Read:</b> ${esc(cur.name)} tracks ${benchDelta(cur)} vs. ${esc(state.past[2].name)}, its closest comparable by program.
+    </div>
+  </div>`;
+}
+function currentAsBench(p){
+  const per = k => Math.round(k / (p.sqft/1000));
+  return {name:p.name,current:true,sqft:p.sqft,rooms:p.rooms,materials:p.materials,spent:p.spent,
+    use:{concrete:per(p.materials.includes('Mass timber')?2600:4800),steel:per(p.materials.includes('Structural steel')?560:390),
+         lumber:per(p.materials.includes('Mass timber')?1750:p.type.includes('Residential')||p.type.includes('Multi')?640:60),
+         drywall:per(2900)}};
+}
+function benchDelta(cur){
+  return cur.sqft>80000 ? '4% lower concrete intensity' : 'comparable material intensity';
+}
+
+/* ---- ADMIN + WORKER: Equipment (live) ---- */
+function equip(){
+  crumb('Equipment <span>/ live fleet telemetry</span>');
+  const isWorker = state.role==='worker';
+  const me = ME[state.role]();
+  const list = state.equipment.filter(e => state.role==='client' ? user('u5') && proj(e.projectId) && ME.client().projects.includes(e.projectId) : true);
+  return `
+  <div class="sec-head" style="margin-top:0"><h2>Fleet status</h2><span class="hint"><span class="live-dot"></span>telemetry updates every few seconds</span>
+    ${state.role==='admin'?`<select id="eqfilter" onchange="render()" style="margin-left:auto;padding:8px 12px;border:1px solid var(--border-strong);border-radius:8px;font-weight:600">
+      <option value="">All projects</option>${state.projects.map(p=>`<option>${esc(p.name)}</option>`).join('')}</select>`:''}</div>
+  <div class="eq-grid">
+    ${list.map(e=>`
+    <div class="card eq-card">
+      <div class="eq-icon">${e.code}</div>
+      <div style="min-width:0">
+        <h4>${esc(e.name)}</h4>
+        <div class="eq-meta">${esc(proj(e.projectId)?proj(e.projectId).name:'Yard')} · Operator: ${esc(e.operator)}</div>
+        <div style="margin-top:6px;font-size:12px"><span class="eq-dot ${e.status}"></span>${{ 'in-use':'In use', idle:'Idle', offline:'Offline — check unit' }[e.status]}</div>
+      </div>
+      <div class="eq-ping">last ping<br><b data-rel="${e.ping}">${rel(e.ping)}</b>
+        ${isWorker?`<div style="margin-top:6px"><button class="btn sec sm" onclick="toggleEquip('${e.id}')">${e.status==='in-use'?'Check in':'Check out'}</button></div>`:''}
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+function toggleEquip(eid){
+  const e = state.equipment.find(x=>x.id===eid);
+  e.status = e.status==='in-use' ? 'idle' : 'in-use';
+  e.ping = Date.now(); e.operator = e.status==='in-use' ? 'M. Ortiz' : '—';
+  save(); render(); toast(`${e.code} ${e.status==='in-use'?'checked out':'checked in'}`);
+}
+window.toggleEquip = toggleEquip;
+
+/* ---- WORKER: My Site (Operate) ---- */
+function site(){
+  crumb('My Site <span>/ status updates</span>');
+  const me = ME.worker();
+  const myProjs = me.projects.map(proj).filter(Boolean);
+  const p = proj(state.route.projectId) && me.projects.includes(state.route.projectId) ? proj(state.route.projectId) : myProjs[0];
+  if(!p) return `<div class="card empty">You're not assigned to any project yet.</div>`;
+  const inv = state.inventory.filter(i=>i.projectId===p.id);
+  return `
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    ${myProjs.map(x=>`<button class="btn ${x.id===p.id?'pri':'sec'} sm" onclick="nav('site','${x.id}')">${esc(x.name)}</button>`).join('')}
+  </div>
+  <div class="split">
+    <div class="grid" style="align-content:start">
+      <div class="card card-pad">
+        <h3 style="font-size:15px;margin-bottom:2px">Post a status update</h3>
+        <div class="muted" style="font-size:12px;margin-bottom:16px">Goes straight to the client feed and project log.</div>
+        <div class="field"><label>Current phase</label>
+          <select id="upd-phase">${PHASES.map((ph,i)=>`<option value="${i}" ${i===p.phaseIdx?'selected':''}>${ph}</option>`).join('')}</select></div>
+        <div class="field"><label>Overall completion — <span class="range-val" id="upd-val">${p.progress}%</span></label>
+          <input type="range" min="0" max="100" value="${p.progress}" id="upd-progress" oninput="document.getElementById('upd-val').textContent=this.value+'%'"></div>
+        <div class="field"><label>Note for the project log &amp; client</label>
+          <textarea id="upd-note" rows="3" placeholder="e.g. Framing complete on Level 4, moving to Level 5 on Monday…"></textarea></div>
+        <button class="btn pri" onclick="postUpdate('${p.id}')">Publish update</button>
+      </div>
+      <div class="card card-pad">
+        <h3 style="font-size:14px;margin-bottom:8px">Current phase timeline</h3>
+        <div class="stepper" style="margin:10px 0 0">
+          ${PHASES.map((ph,i)=>`<div class="step ${i<p.phaseIdx?'done':i===p.phaseIdx?'now':''}">${ph}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card card-pad">
+        <h3 style="font-size:14px;margin-bottom:10px">Inventory — ${esc(p.name)}</h3>
+        ${inv.map(i=>`
+          <div style="display:flex;align-items:center;font-size:12.5px;padding:7px 0;border-bottom:1px dashed var(--border)">
+            <span>${esc(i.item)}</span>
+            <span class="mono" style="margin-left:auto;font-weight:600;color:${i.onHand<=i.par?'var(--warn)':'var(--ink)'}">${i.onHand} ${i.unit}</span>
+          </div>`).join('') || '<div class="empty">No materials tracked.</div>'}
+        <button class="btn sec sm" style="margin-top:12px" onclick="nav('inv')">Open full inventory →</button>
+      </div>
+      <div class="card card-pad">
+        <h3 style="font-size:14px;margin-bottom:8px">Recent updates</h3>
+        ${state.feed.filter(f=>f.projectId===p.id).sort((a,b)=>b.t-a.t).slice(0,4).map(f=>`
+          <div class="feed-item"><span class="fa">${initials(f.by)}</span>
+            <div><div class="ft">${esc(f.text)}</div><div class="fm"><span data-rel="${f.t}">${rel(f.t)}</span></div></div></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+function postUpdate(pid){
+  const p = proj(pid);
+  const ph = +document.getElementById('upd-phase').value;
+  const prog = +document.getElementById('upd-progress').value;
+  const note = document.getElementById('upd-note').value.trim();
+  p.phaseIdx = ph; p.progress = prog;
+  const text = note || `Status update: ${PHASES[ph]} — ${prog}% complete.`;
+  state.feed.push({projectId:pid,t:Date.now(),by:ME.worker().name,kind:'status',text});
+  save(); render(); toast('Update published — clients can see it live');
+}
+window.postUpdate = postUpdate;
+
+/* ---- WORKER: Inventory ---- */
+function inv(){
+  crumb('Inventory <span>/ site materials</span>');
+  const me = ME.worker();
+  const myIds = state.role==='worker' ? me.projects : state.projects.map(p=>p.id);
+  const rows = state.inventory.filter(i=>myIds.includes(i.projectId));
+  return `
+  <div class="sec-head" style="margin-top:0"><h2>Material stock</h2><span class="hint">Adjust counts as deliveries arrive and materials are used</span>
+    <button class="btn pri sm" style="margin-left:auto" onclick="openAddMaterial()">+ Add Material</button></div>
+  <div class="card">
+    <table><thead><tr><th>Material</th><th>Project</th><th>On Hand</th><th>Consumed</th><th>Status</th><th style="text-align:right">Action</th></tr></thead>
+    <tbody>
+    ${rows.map(i=>{
+      const low = i.onHand<=i.par;
+      const pct = Math.min(100, Math.round(i.onHand/i.required*100));
+      return `<tr class="${low?'low':''}">
+        <td><b>${esc(i.item)}</b><div class="muted" style="font-size:11px">${esc(i.unit)}</div></td>
+        <td style="font-size:12px">${esc(proj(i.projectId).name)}</td>
+        <td><span class="stepctl"><button onclick="adjust('${i.id}',-5)">−</button><span class="q">${i.onHand}</span><button onclick="adjust('${i.id}',5)">+</button></span>
+            <button class="btn sec sm" style="margin-left:8px" onclick="adjust('${i.id}',20,'delivery')">+ Delivery</button></td>
+        <td class="use"><div class="bar"><i style="width:${pct}%;background:${low?'var(--warn)':'var(--ok)'}"></i></div><span class="muted mono" style="font-size:10.5px">${pct}% of ${i.required}</span></td>
+        <td>${low?'<span class="pill warn">Low — below par</span>':'<span class="pill ok">In stock</span>'}</td>
+        <td style="text-align:right">${low?`<button class="btn sec sm" onclick="reorder('${i.id}')">Request order</button>`:''}</td>
+      </tr>`;}).join('')}
+    </tbody></table>
+  </div>`;
+}
+function adjust(iid,delta,kind){
+  const i = state.inventory.find(x=>x.id===iid);
+  i.onHand = Math.max(0, i.onHand+delta);
+  if(kind==='delivery') state.feed.push({projectId:i.projectId,t:Date.now(),by:ME[state.role]().name,kind:'delivery',text:`Delivery logged: ${delta} ${i.unit} ${i.item}.`});
+  save(); render();
+}
+function reorder(iid){ const i=state.inventory.find(x=>x.id===iid); toast(`PO requested: ${i.item} → ${proj(i.projectId).name}`); }
+window.adjust=adjust; window.reorder=reorder;
+
+/* ---- Add Material modal (admin + worker) ---- */
+function openAddMaterial(presetPid){
+  openModal(`
+    <div class="modal-h"><h3>Add Material to Inventory</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b">
+      <div class="field"><label>Project</label>
+        <select id="am-proj">${state.projects.map(p=>`<option value="${p.id}" ${p.id===presetPid?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Material name</label><input id="am-item" placeholder="e.g. Ready-mix concrete"></div>
+      <div class="frow">
+        <div class="field"><label>Unit of measure</label><input id="am-unit" placeholder="yd³, tons, sheets…"></div>
+        <div class="field"><label>On hand</label><input id="am-onhand" type="number" min="0" value="0"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Required for project</label><input id="am-req" type="number" min="0" value="0"></div>
+        <div class="field"><label>Par level (low-stock alert below this)</label><input id="am-par" type="number" min="0" value="0"></div>
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn pri" onclick="amSave()">Add material</button></div>`);
+}
+function amSave(){
+  const g = id => document.getElementById(id);
+  const item = g('am-item').value.trim();
+  if(!item){ toast('Material name is required'); return; }
+  state.inventory.push({ id:'i'+(state.seq++), projectId:g('am-proj').value, item,
+    unit:g('am-unit').value.trim()||'units', onHand:+g('am-onhand').value||0,
+    required:+g('am-req').value||0, par:+g('am-par').value||0 });
+  save(); closeModal(); render(); toast(`Added "${item}" to inventory`);
+}
+window.openAddMaterial=openAddMaterial; window.amSave=amSave;
+
+/* ---- CLIENT: Live status (Monitor) ---- */
+function live(){
+  const me = ME.client();
+  const p = proj(me.projects[0]);
+  if(!p) return `<div class="card empty">No project assigned yet.</div>`;
+  crumb(`Live Status <span>/ ${esc(p.name)}</span>`);
+  const eq = state.equipment.filter(e=>e.projectId===p.id);
+  const feed = state.feed.filter(f=>f.projectId===p.id).sort((a,b)=>b.t-a.t);
+  return `
+  <div class="card client-hero" style="margin-bottom:16px">
+    ${ring(p.progress)}
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <h2 style="font-size:21px">${esc(p.name)}</h2>
+        <span class="pill ok"><span class="live-dot"></span>LIVE</span>
+      </div>
+      <div class="muted" style="font-size:12.5px;margin:2px 0 14px">${esc(p.type)} · ${p.sqft.toLocaleString()} sq ft · ${p.rooms.units} units · est. completion ${p.due}</div>
+      <div class="phase-tl">
+        ${PHASES.map((ph,i)=>`<div class="pnode ${i<p.phaseIdx?'done':i===p.phaseIdx?'now':''}">${ph}</div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="split">
+    <div class="card card-pad">
+      <h3 style="font-size:14px;margin-bottom:4px">Updates from the field</h3>
+      <div class="muted" style="font-size:11.5px;margin-bottom:6px">Posted by your build team — this feed refreshes as they work.</div>
+      ${feed.map(f=>`
+        <div class="feed-item"><span class="fa" style="background:${f.kind==='delivery'?'#6D5B3E':'var(--steel)'}">${initials(f.by)}</span>
+          <div><div class="ft">${esc(f.text)}</div>
+          <div class="fm">${esc(f.by)} · <span data-rel="${f.t}">${rel(f.t)}</span></div></div></div>`).join('') || '<div class="empty">No updates yet.</div>'}
+    </div>
+    <div class="card card-pad">
+      <h3 style="font-size:14px;margin-bottom:10px">Equipment on your site <span class="pill ok" style="margin-left:4px"><span class="live-dot"></span>LIVE</span></h3>
+      ${eq.map(e=>`
+        <div style="display:flex;align-items:center;font-size:12.5px;padding:8px 0;border-bottom:1px dashed var(--border)">
+          <span><span class="eq-dot ${e.status}"></span><b class="mono" style="font-size:11px">${e.code}</b> · ${esc(e.name)}</span>
+          <span class="mono muted" style="margin-left:auto;font-size:10.5px">${{ 'in-use':'in use', idle:'idle', offline:'offline' }[e.status]} · <span data-rel="${e.ping}">${rel(e.ping)}</span></span>
+        </div>`).join('')}
+      <div class="muted" style="font-size:11px;margin-top:12px">Positions refresh continuously from on-unit telematics.</div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   MODALS — new project wizard & onboard user
+   ============================================================ */
+function openModal(html){ $('#modal-root').innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; }
+function closeModal(){ $('#modal-root').innerHTML=''; delete window.__wiz; delete window.__onb; }
+window.closeModal = closeModal;
+
+/* ---- New Project wizard (Configure, 3 steps) ---- */
+function openNewProject(){
+  window.__wiz = {step:1, data:{name:'',type:'Multi-family residential',address:'',sqft:'',budget:'',due:'',units:'',beds:'',baths:'',common:'',mats:[],team:[]}};
+  wizRender();
+}
+function wizRender(){
+  const w = window.__wiz, d = w.data;
+  const heads = ['Project details','Scope & rooms','Team assignment'];
+  let body = '';
+  if(w.step===1){
+    body = `
+      <div class="field"><label>Project name</label><input id="wz-name" value="${esc(d.name)}" placeholder="e.g. The Palms Residences"></div>
+      <div class="frow">
+        <div class="field"><label>Project type</label><select id="wz-type">
+          ${['Multi-family residential','Commercial TI','Residential (2× duplex)','Mixed-use','Industrial'].map(t=>`<option ${t===d.type?'selected':''}>${t}</option>`).join('')}</select></div>
+        <div class="field"><label>Address</label><input id="wz-address" value="${esc(d.address)}" placeholder="Street address"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Size (sq ft)</label><input id="wz-sqft" type="number" value="${d.sqft}" placeholder="84000"></div>
+        <div class="field"><label>Budget (USD)</label><input id="wz-budget" type="number" value="${d.budget}" placeholder="18200000"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Start date</label><input id="wz-start" type="date" value="${d.start||''}"></div>
+        <div class="field"><label>Target completion</label><input id="wz-due" type="date" value="${d.due||''}"></div>
+      </div>`;
+  } else if(w.step===2){
+    body = `
+      <div class="frow">
+        <div class="field"><label>Units</label><input id="wz-units" type="number" value="${d.units}"></div>
+        <div class="field"><label>Bedrooms</label><input id="wz-beds" type="number" value="${d.beds}"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Bathrooms</label><input id="wz-baths" type="number" value="${d.baths}"></div>
+        <div class="field"><label>Common areas</label><input id="wz-common" type="number" value="${d.common}"></div>
+      </div>
+      <div class="field"><label>Primary materials (select all that apply)</label>
+        ${['Post-tensioned concrete','Structural steel','Mass timber','Rebar steel','Douglas fir lumber','Drywall','Curtain-wall glazing','Fiber-cement siding'].map(m=>`
+          <div class="check-row"><input type="checkbox" ${d.mats.includes(m)?'checked':''} onchange="wizMat('${m}',this.checked)"><span>${m}</span></div>`).join('')}</div>`;
+  } else {
+    body = `
+      <div class="field"><label>Assign team members</label>
+        ${state.users.map(u=>`
+          <div class="check-row"><input type="checkbox" ${d.team.includes(u.id)?'checked':''} onchange="wizTeam('${u.id}',this.checked)">
+          ${avHtml(u,avCls(u.role))}<b style="font-size:13px">${esc(u.name)}</b><small>${u.role}</small></div>`).join('')}</div>`;
+  }
+  openModal(`
+    <div class="modal-h"><h3>New Project — ${heads[w.step-1]}</h3>
+      <div class="steps-ind">${[1,2,3].map(i=>`<i class="${i<=w.step?'on':''}"></i>`).join('')}</div>
+      <button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b">${body}</div>
+    <div class="modal-f">
+      ${w.step>1?`<button class="btn sec" onclick="wizBack()">← Back</button>`:''}
+      <button class="btn pri" onclick="wizNext()">${w.step<3?'Continue →':'Create Project'}</button>
+    </div>`);
+}
+function wizGrab(){
+  const d = window.__wiz.data, g = id => document.getElementById(id);
+  if(window.__wiz.step===1){ d.name=g('wz-name').value.trim(); d.type=g('wz-type').value; d.address=g('wz-address').value.trim();
+    d.sqft=g('wz-sqft').value; d.budget=g('wz-budget').value; d.start=g('wz-start').value; d.due=g('wz-due').value; }
+  if(window.__wiz.step===2){ d.units=g('wz-units').value; d.beds=g('wz-beds').value; d.baths=g('wz-baths').value; d.common=g('wz-common').value; }
+}
+function wizMat(m,on){ const mm=window.__wiz.data.mats; on?mm.push(m):mm.splice(mm.indexOf(m),1); }
+function wizTeam(id,on){ const t=window.__wiz.data.team; on?t.push(id):t.splice(t.indexOf(id),1); }
+function wizBack(){ window.__wiz.step--; wizRender(); }
+function wizNext(){
+  wizGrab(); const w = window.__wiz, d = w.data;
+  if(w.step===1 && !d.name){ toast('Give the project a name first'); return; }
+  if(w.step<3){ w.step++; wizRender(); return; }
+  // create
+  const id = 'p'+(state.seq++);
+  const p = { id, name:d.name, type:d.type, address:d.address||'—', sqft:+d.sqft||10000, budget:+d.budget||1000000, spent:0,
+    start:d.start||'2026-12-01', due:d.due||'2028-01-01', phaseIdx:0, progress:0,
+    rooms:{units:+d.units||0,beds:+d.beds||0,baths:+d.baths||0,common:+d.common||0},
+    materials:d.mats.length?d.mats:['General construction'], team:d.team.length?d.team:['u1'] };
+  state.projects.push(p);
+  d.team.forEach(uid=>{ if(!user(uid).projects.includes(id)) user(uid).projects.push(id); });
+  if(!user('u1').projects.includes(id)) user('u1').projects.push(id);
+  state.feed.push({projectId:id,t:Date.now(),by:'Dana Kim',kind:'note',text:`Project created: ${p.name}. Mobilization scheduled.`});
+  save(); closeModal(); nav('projectDetail', id); toast('Project created and team assigned');
+}
+window.openNewProject=openNewProject; window.wizMat=wizMat; window.wizTeam=wizTeam; window.wizBack=wizBack; window.wizNext=wizNext;
+
+/* ---- Onboard user modal ---- */
+function openOnboard(editId){
+  const u = editId ? user(editId) : null;
+  window.__onb = { editId, role: u?u.role:'worker' };
+  openModal(`
+    <div class="modal-h"><h3>${u?'Edit User':'Onboard New User'}</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b">
+      <div class="field"><label>Full name</label><input id="ob-name" value="${u?esc(u.name):''}" placeholder="e.g. Alex Chen"></div>
+      <div class="field"><label>Email — an invite link is sent on save</label><input id="ob-email" value="${u?esc(u.email):''}" placeholder="name@company.com"></div>
+      <div class="field"><label>Role type</label>
+        <div class="role-cards">
+          <button class="role-card" data-r="admin" onclick="obRole('admin')"><b>Admin</b><span>Manage projects, team & assignments across the portfolio.</span></button>
+          <button class="role-card" data-r="worker" onclick="obRole('worker')"><b>Worker</b><span>Update site inventory and post project status updates.</span></button>
+          <button class="role-card" data-r="client" onclick="obRole('client')"><b>Client</b><span>Watch their project live — statuses & equipment, read-only.</span></button>
+        </div></div>
+      <div class="field"><label>Assign to projects</label>
+        ${state.projects.map(p=>`
+          <div class="check-row"><input type="checkbox" id="obp-${p.id}" ${u&&u.projects.includes(p.id)?'checked':''}>
+          <span style="font-size:13px;font-weight:600">${esc(p.name)}</span><small>${PHASES[p.phaseIdx]}</small></div>`).join('')}</div>
+    </div>
+    <div class="modal-f"><button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn pri" onclick="obSave()">${u?'Save changes':'Send invite & create'}</button></div>`);
+  obPaint();
+}
+function obRole(r){ window.__onb.role = r; obPaint(); }
+function obPaint(){ document.querySelectorAll('.role-card').forEach(c=>c.classList.toggle('sel', c.dataset.r===window.__onb.role)); }
+function obSave(){
+  const o = window.__onb, name = document.getElementById('ob-name').value.trim(), email = document.getElementById('ob-email').value.trim();
+  if(!name){ toast('Name is required'); return; }
+  const projs = state.projects.filter(p=>document.getElementById('obp-'+p.id).checked).map(p=>p.id);
+  if(o.editId){
+    const u = user(o.editId); u.name = name||u.name; u.email = email||u.email; u.role = o.role; u.projects = projs;
+    save(); closeModal(); render(); toast('User updated'); return;
+  }
+  const id = 'u'+(state.seq++);
+  state.users.push({id, name, email:email||name.toLowerCase().replace(/\s+/g,'.')+'@pending-invite', role:o.role, projects:projs});
+  save(); closeModal(); nav('workforce'); toast(`Invite sent to ${name} (${o.role})`);
+}
+window.openOnboard=openOnboard; window.obRole=obRole; window.obSave=obSave;
+
+/* ============================================================
+   LIVE TICK — relative times + equipment telemetry drift
+   ============================================================ */
+function tick(){
+  document.querySelectorAll('[data-rel]').forEach(el=>{ el.textContent = rel(+el.dataset.rel); });
+}
+let drift = 0;
+setInterval(()=>{
+  // heartbeat on one random unit
+  const e = state.equipment[Math.floor(Math.random()*state.equipment.length)];
+  if(e && e.status!=='offline'){ e.ping = Date.now(); }
+  // occasional status drift (idles come online, etc.)
+  if(++drift % 9 === 0){
+    const e2 = state.equipment[Math.floor(Math.random()*state.equipment.length)];
+    if(e2 && e2.status==='idle' && Math.random()<.5){ e2.status='in-use'; e2.operator='J. Alvarez'; e2.ping=Date.now();
+      save(); if(['equip','live','projectDetail'].includes(state.route.screen) && !window.__wiz && !window.__onb) render(); }
+  }
+  tick();
+}, 1000);
+
+render();
+</script>
+</body>
+</html>
