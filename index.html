@@ -471,7 +471,7 @@ function projectDetail(){
     <div class="stepper">
       ${PHASES.map((ph,i)=>`<div class="step ${i<p.phaseIdx?'done':i===p.phaseIdx?'now':''}${state.role==='admin'?' ctl':''}" ${state.role==='admin'?`onclick="setPhase('${p.id}',${i})" title="Jump to ${ph}"`:''}>${ph}</div>`).join('')}
     </div>
-    ${state.role==='admin' ? `<div class="muted" style="font-size:11px;margin-top:8px">Click a phase to jump to it, or use “Advance phase →” to move one step forward.</div>` : ''}
+    ${state.role==='admin' ? `<div class="muted" style="font-size:11px;margin-top:8px">Click a phase to jump forward, or use “Advance phase →” to move one step. Jumping back requires a reason.</div>` : ''}
   </div>
   <div class="split" style="margin-top:16px">
     <div class="card card-pad">
@@ -675,7 +675,7 @@ function site(){
         </div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
           ${p.phaseIdx < PHASES.length-1 ? `<button class="btn pri sm" onclick="advancePhase('${p.id}')">Advance phase →</button>` : '<span class="pill ok">All phases complete</span>'}
-          <span class="muted" style="font-size:11px">Click a step to jump to it. The client sees the change live.</span>
+          <span class="muted" style="font-size:11px">Click a step to jump to it — moving back asks for a reason. The client sees the change live.</span>
         </div>
       </div>
     </div>
@@ -710,19 +710,51 @@ function postUpdate(pid){
 }
 window.postUpdate = postUpdate;
 
-/* ---- Phase advancement (admin + worker) ---- */
+/* ---- Phase advancement (admin + worker); backward moves require a reason ---- */
 function setPhase(pid, i){
   const p = proj(pid); if(!p || i === p.phaseIdx) return;
+  if(i < p.phaseIdx){ openPhaseBack(pid, i); return; }
+  applyPhase(pid, i);
+}
+function applyPhase(pid, i, reason){
+  const p = proj(pid); if(!p) return;
+  const prev = PHASES[p.phaseIdx];
   p.phaseIdx = i;
-  state.feed.push({projectId:pid, t:Date.now(), by:ME[state.role]().name, kind:'status',
-    text:`Phase updated to ${PHASES[i]} (${p.progress}% complete).`});
+  state.feed.push({projectId:pid, t:Date.now(), by:ME[state.role]().name, kind: reason ? 'note' : 'status',
+    text: reason
+      ? `Phase pulled back: ${prev} → ${PHASES[i]}. Reason: ${reason}`
+      : `Phase updated to ${PHASES[i]} (${p.progress}% complete).`});
   save(); render(); toast(`Phase: ${PHASES[i]}`);
 }
 function advancePhase(pid){
   const p = proj(pid); if(!p) return;
-  setPhase(pid, Math.min(p.phaseIdx + 1, PHASES.length - 1));
+  applyPhase(pid, Math.min(p.phaseIdx + 1, PHASES.length - 1));
+}
+function openPhaseBack(pid, i){
+  const p = proj(pid); if(!p) return;
+  window.__pb = {pid, i};
+  openModal(`
+    <div class="modal-h"><h3>Pull back a phase</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b">
+      <div class="card card-pad" style="background:var(--warn-soft);border:1px solid #E4D3A8;margin-bottom:16px;font-size:13px">
+        Moving <b>${esc(p.name)}</b> back from <b>${esc(PHASES[p.phaseIdx])}</b> to <b>${esc(PHASES[i])}</b>.
+        This posts to the client-visible project feed — a reason is required.
+      </div>
+      <div class="field"><label>Reason (required — e.g. failed inspection, rework, scope change)</label>
+        <textarea id="pb-reason" rows="3" placeholder="Why is the project moving back?"></textarea></div>
+    </div>
+    <div class="modal-f"><button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn pri" onclick="pbSave()">Move back to ${esc(PHASES[i])}</button></div>`);
+}
+function pbSave(){
+  const reason = document.getElementById('pb-reason').value.trim();
+  if(!reason){ toast('A reason is required to move a phase back'); return; }
+  const {pid, i} = window.__pb;
+  closeModal();
+  applyPhase(pid, i, reason);
 }
 window.setPhase = setPhase; window.advancePhase = advancePhase;
+window.openPhaseBack = openPhaseBack; window.pbSave = pbSave;
 
 /* ---- WORKER: Inventory ---- */
 function inv(){
