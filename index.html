@@ -208,7 +208,54 @@
   .pnode.done::after{background:var(--ok)}
 
   .empty{padding:34px;text-align:center;color:var(--muted);font-size:13px}
-  @media(max-width:1000px){.proj-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.split{grid-template-columns:1fr}.eq-grid{grid-template-columns:1fr}}
+
+  /* ---------- mobile / tablet ---------- */
+  .tabbar{display:none}
+  @media(max-width:900px){
+    #app{grid-template-columns:1fr}
+    aside{display:none}
+    .tabbar{display:grid;grid-auto-flow:column;position:fixed;left:0;right:0;bottom:0;z-index:40;
+      background:var(--side);border-top:1px solid #3A372F;padding:6px 8px calc(8px + env(safe-area-inset-bottom));
+      justify-content:space-around;gap:2px}
+    .tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      padding:6px 2px;border-radius:8px;color:var(--side-muted);font-size:9.5px;font-weight:600;
+      min-width:52px;min-height:44px;text-align:center;line-height:1.15}
+    .tabbar button.active{color:#fff;background:var(--accent)}
+    .tabbar button .icn{font:600 12px var(--mono)}
+    main{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+    .topbar{padding:10px 14px;gap:10px}
+    .crumb{font-size:14px}
+    .crumb span{display:none}
+    .role-switch button{padding:6px 10px;font-size:11px}
+    .persona{padding-left:10px}
+    .persona div{display:none}
+    #view{padding:14px}
+    .kpis{grid-template-columns:1fr 1fr;gap:10px}
+    .kpi .v{font-size:24px}
+    .proj-grid{grid-template-columns:1fr}
+    .split{grid-template-columns:1fr}
+    .eq-grid{grid-template-columns:1fr}
+    .client-hero{flex-direction:column;align-items:flex-start;gap:18px;padding:20px}
+    .dhead{flex-wrap:wrap;gap:16px}
+    .frow{grid-template-columns:1fr}
+    .role-cards{grid-template-columns:1fr}
+    .card:has(> table){overflow-x:auto}
+    table{min-width:620px}
+    .sec-head{flex-wrap:wrap;row-gap:8px}
+    .sec-head .btn,.sec-head select{margin-left:0!important}
+    .step{font-size:9px;padding-top:20px;line-height:1.2}
+    .step::after{width:12px;height:12px;top:1px}
+    .step::before{top:6px}
+    .pnode{font-size:8px}
+    .phase-tl{flex-wrap:wrap;row-gap:14px}
+    .pnode{flex:1 0 30%}
+    .bench-bars .brow{grid-template-columns:120px 1fr 60px;gap:8px}
+    .bench-bars .bl{font-size:11px}
+    .overlay{padding:10px}
+    .modal{width:100%;max-height:92vh}
+    .eq-ping{margin-left:8px}
+    .toast-wrap{left:0;bottom:86px}
+  }
 </style>
 </head>
 <body>
@@ -238,6 +285,7 @@
 </div>
 <div id="modal-root"></div>
 <div class="toast-wrap" id="toasts"></div>
+<nav class="tabbar" id="tabbar"></nav>
 
 <script>
 /* ============================================================
@@ -349,9 +397,11 @@ function nav(screen, projectId){ state.route = {screen, projectId}; save(); rend
 window.setRole = setRole; window.nav = nav; window.resetDemo = resetDemo;
 
 function render(){
-  // nav
-  $('#nav').innerHTML = NAV[state.role].map(([id,label]) =>
+  // nav (sidebar on desktop, tab bar on mobile)
+  const navHtml = NAV[state.role].map(([id,label]) =>
     `<button class="${active(id)?'active':''}" onclick="nav('${id}')"><span class="icn">${{'overview':'▤','projects':'▦','workforce':'⚑','bench':'≋','equip':'⚙','site':'▶','inv':'▧','live':'●'}[id]||'·'}</span>${label}</button>`).join('');
+  $('#nav').innerHTML = navHtml;
+  $('#tabbar').innerHTML = navHtml;
   // role switch + persona
   document.querySelectorAll('#roles button').forEach(b => b.classList.toggle('active', b.dataset.role===state.role));
   const me = ME[state.role]();
