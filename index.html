@@ -125,6 +125,8 @@
   .step::before{content:'';position:absolute;top:6px;left:0;right:0;height:3px;background:#E7E3D9}
   .step::after{content:'';position:absolute;top:0;left:0;width:15px;height:15px;border-radius:50%;background:#E7E3D9;border:2px solid var(--card);box-shadow:0 0 0 1px var(--border-strong)}
   .step.done{color:var(--ink2)}
+  .step.ctl{cursor:pointer}
+  .step.ctl:hover{color:var(--accent-dark)}
   .step.done::before{background:var(--ok)}
   .step.done::after{background:var(--ok)}
   .step.now{color:var(--accent-dark);font-weight:800}
@@ -463,11 +465,13 @@ function projectDetail(){
       <div style="text-align:right">
         <div class="team" style="justify-content:flex-end;margin-bottom:8px">${p.team.map(id=>avHtml(user(id), avCls(user(id).role))).join('')}</div>
         <div class="due">start ${p.start} · due ${p.due}</div>
+        ${state.role==='admin' && p.phaseIdx < PHASES.length-1 ? `<div style="margin-top:10px"><button class="btn pri sm" onclick="advancePhase('${p.id}')">Advance phase →</button></div>` : ''}
       </div>
     </div>
     <div class="stepper">
-      ${PHASES.map((ph,i)=>`<div class="step ${i<p.phaseIdx?'done':i===p.phaseIdx?'now':''}">${ph}</div>`).join('')}
+      ${PHASES.map((ph,i)=>`<div class="step ${i<p.phaseIdx?'done':i===p.phaseIdx?'now':''}${state.role==='admin'?' ctl':''}" ${state.role==='admin'?`onclick="setPhase('${p.id}',${i})" title="Jump to ${ph}"`:''}>${ph}</div>`).join('')}
     </div>
+    ${state.role==='admin' ? `<div class="muted" style="font-size:11px;margin-top:8px">Click a phase to jump to it, or use “Advance phase →” to move one step forward.</div>` : ''}
   </div>
   <div class="split" style="margin-top:16px">
     <div class="card card-pad">
@@ -667,7 +671,11 @@ function site(){
       <div class="card card-pad">
         <h3 style="font-size:14px;margin-bottom:8px">Current phase timeline</h3>
         <div class="stepper" style="margin:10px 0 0">
-          ${PHASES.map((ph,i)=>`<div class="step ${i<p.phaseIdx?'done':i===p.phaseIdx?'now':''}">${ph}</div>`).join('')}
+          ${PHASES.map((ph,i)=>`<div class="step ${i<p.phaseIdx?'done':i===p.phaseIdx?'now':''} ctl" onclick="setPhase('${p.id}',${i})" title="Jump to ${ph}">${ph}</div>`).join('')}
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
+          ${p.phaseIdx < PHASES.length-1 ? `<button class="btn pri sm" onclick="advancePhase('${p.id}')">Advance phase →</button>` : '<span class="pill ok">All phases complete</span>'}
+          <span class="muted" style="font-size:11px">Click a step to jump to it. The client sees the change live.</span>
         </div>
       </div>
     </div>
@@ -701,6 +709,20 @@ function postUpdate(pid){
   save(); render(); toast('Update published — clients can see it live');
 }
 window.postUpdate = postUpdate;
+
+/* ---- Phase advancement (admin + worker) ---- */
+function setPhase(pid, i){
+  const p = proj(pid); if(!p || i === p.phaseIdx) return;
+  p.phaseIdx = i;
+  state.feed.push({projectId:pid, t:Date.now(), by:ME[state.role]().name, kind:'status',
+    text:`Phase updated to ${PHASES[i]} (${p.progress}% complete).`});
+  save(); render(); toast(`Phase: ${PHASES[i]}`);
+}
+function advancePhase(pid){
+  const p = proj(pid); if(!p) return;
+  setPhase(pid, Math.min(p.phaseIdx + 1, PHASES.length - 1));
+}
+window.setPhase = setPhase; window.advancePhase = advancePhase;
 
 /* ---- WORKER: Inventory ---- */
 function inv(){
